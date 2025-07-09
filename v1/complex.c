@@ -5,7 +5,7 @@
 #include <math.h>
 #include <string.h>
 
-const double PI = 3.145296535;
+const double PI = 3.14159265359;
 
 void polarToImag(double *mag, double *angleDeg);
 void imagToPolar(double *real, double *imag);
@@ -54,18 +54,13 @@ void polarToImag(double *mag, double *angleDeg){
     printf("Angles (deg): ");
     scanf("%lf", &(*angleDeg));
 
-    // printf("The angle is %.3f degrees\n", *angleDeg);
-    // printf("The magnitude is %.3f \n", *mag);
+    //printf("The angle is %.3f degrees\n", *angleDeg);
+    //printf("The magnitude is %.3f \n", *mag);
+    
     //calculations
     double angleRad = *angleDeg * PI/180;
     double real = cos(angleRad)*(*mag);
     double imag = sin(angleRad)*(*mag);
-    
-
-    if(real < 0.01) 
-        real = 0;
-    if (imag < 0.01)
-        real = 0;
                
     clearWindow();
     

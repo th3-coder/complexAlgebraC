@@ -1,0 +1,28 @@
+//parse double arrays
+    for(int i = 0; i < eq_len - 1; i++){
+        if(equation[i] == 'p'){
+            // Expecting format: p(mag,angle)
+            if (sscanf(&equation[i], "p(%lf,%lf)", &mag, &angle) == 2) {
+                polarTerms[pCounter++] = mag;
+                polarTerms[pCounter++] = angle;
+            }
+        }
+        if(equation[i] == 'i'){
+            // Expecting format: i(real,imag)
+            if (sscanf(&equation[i], "i(%lf,%lf)", &real, &imag) == 2) {
+                complexTerms[cCounter++] = real;
+                complexTerms[cCounter++] = imag;
+            }
+        }
+    }
+    printf("Polar Terms: ");
+    for(int i = 0; i < pCounter; i += 2){
+        printf("(mag: %f, angle: %f) ", polarTerms[i], polarTerms[i+1]);
+    }
+    printf("\nComplex Terms: ");
+    for(int i = 0; i < cCounter; i += 2){
+        printf("(real: %f, imag: %f) ", complexTerms[i], complexTerms[i+1]);
+    }
+    printf("\n");
+
+    return;
