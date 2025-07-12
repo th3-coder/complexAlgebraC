@@ -13,5 +13,5 @@
     * Enter using PEMDAS
 
 
-***Command to Compile on Windows***
-[ gcc F_complexCalc.c complexCalc.c -o "complexCalc.exe" ]
+***Compile on Windows***
+* gcc F_complexCalc.c complexCalc.c -o "complexCalc.exe"
