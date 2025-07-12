@@ -39,6 +39,9 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
     char op_ptr;
     int op_pos = -1;
     char op;
+    char result[300];
+    double fmag, fangle; //result (passed by ref into functions)
+
     //scan for parenthesis call solve function using inside parenthesis only using output to finish [update]
     
     //check for operators using pemdas
@@ -83,7 +86,7 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
     //find left term
     for(int j = op_pos - 1; j >= 0; j--){
         //check for polar term
-        if (sscanf(&equation[j-1], "p(%lf,%lf)", &mag[0], &angle[0])){
+        if (sscanf(&equation[j-1], "p[%lf,%lf]", &mag[0], &angle[0])){
             ppolar++;
             lt = 1;
             for(int k = j; k >= 0; k--){
@@ -95,7 +98,7 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
             break;
         }
         //check for imag term
-        else if (sscanf(&equation[j-1], "i(%lf,%lf)", &real[0], &imag[0])){
+        else if (sscanf(&equation[j-1], "i[%lf,%lf]", &real[0], &imag[0])){
             ccomplex++;
             lt = -1;
             for(int k = j; k >= 0; k--){
@@ -110,22 +113,22 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
     
     //find right term
     for(int j = op_pos; j > 0; j++){
-        if (sscanf(&equation[j], "p(%lf,%lf)", &mag[1], &angle[1])){
+        if (sscanf(&equation[j], "p[%lf,%lf]", &mag[1], &angle[1])){
             rt = 1;
             ppolar++;
             for (int k = j-1; k < eq_len; k++){
-               if(equation[k] == ')'){
+               if(equation[k] == ']'){
                      endPos = k;
                      break;
                  }
              }
             break;
         }
-        else if(sscanf(&equation[j], "i(%lf,%lf)", &real[1], &imag[1])){
+        else if(sscanf(&equation[j], "i[%lf,%lf]", &real[1], &imag[1])){
             rt = -1;
             ccomplex++;
             for (int k = j-1; k < eq_len; k++){
-               if(equation[k] == ')'){
+               if(equation[k] == ']'){
                      endPos = k;
                      break;
                  }
@@ -153,7 +156,9 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
     // printf("Operator Position: %i\n", op_pos);
     // printf("\nSolving: %s\n\n", equation);
     
-    double fmag, fangle; //result (passed by ref into functions)
+    fmag = 0;
+    fangle = 0; 
+
     //determine types and call functions to simplify equation
     if(op == '*' || op == '/'){
         if(lt == 1 && rt == 1){
@@ -182,10 +187,9 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
             addPolarImag(mag, angle, real, imag, ccomplex, ppolar, &fmag, &fangle, lt, op);
         }
     }
-
-    char result[30];
+    result[0] = '\0';
     //output result
-    sprintf(result, "p(%.3f,%.3f)", fmag, fangle);
+    sprintf(result, "p[%.3f,%.3f]", fmag, fangle);
     //printf("Simplified version: %s\n", result);
     formatEq(equation, result, eq_len, startPos, endPos, steps);
     //recurvively call function
@@ -388,7 +392,7 @@ void formatEq(char *equation, char result[], int eq_len, int startPos, int endPo
     // printf("LeftH Length: %i\n", strlen(leftH));
     // printf("RightH Length: %i\n", strlen(rightH));
     // printf("Results length: %i\n", resultLen);
-    //printf("Left hand: %s\tRight Hand: %s\tResult: %s\n", leftH, rightH, result);
+    printf("Left hand: %s\tRight Hand: %s\tResult: %s\n", leftH, rightH, result);
     //printf("\nSolution: \n%s\n\n", equation);
     int leftH_len = strlen(leftH);
     int rightH_len = strlen(rightH);
