@@ -10,9 +10,11 @@
 
 int main(){
     double mag, angleDeg, real, imag;
-    char userInput[1000];
+    char userInput[1000], buffer[1000];
     int error = 0, steps = 0;
+    int bP = 0;
     clearWindow();
+    double buffMag, buffAngle;
 
     //main loop
     while(1)
@@ -27,23 +29,53 @@ int main(){
         if(strcmp(userInput, "exit") == 0 || strcmp(userInput, "Exit") == 0 || strcmp(userInput, "e") == 0){
             break;
         }
-        //printf("Eq. entered: %s\n", userInput);
-        solveComplexEq(userInput, len_temp, &steps);   
+        clearWindow();    
+        printf("Eq. entered: %s\n\n", userInput);
+        solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps);   
     }
 
     return 0;
 }
 
-void solveComplexEq(char *equation, int eq_len, int *steps){
+void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAngle, int *bP, int *steps){
     //find first operator
     char op_ptr;
     int op_pos = -1;
     char op;
     char result[300];
     double fmag, fangle; //result (passed by ref into functions)
-
+    int startPos = -1, endPos;
     //scan for parenthesis call solve function using inside parenthesis only using output to finish [update]
-    
+    char temp[500];
+    for(int i = 0; i < eq_len; i++){
+        if(equation[i] == '(' && startPos == -1){
+            startPos = i+1;
+        }
+        else if(equation[i] == ')'){
+            endPos = i-1;
+            break;
+        }
+    }
+    if(startPos != -1){
+        for(int i = 0; i < eq_len; i++){
+            temp[i] = equation[i+startPos];
+        }
+        *bP = 1;
+        temp[(endPos-startPos)+1] = '\0';
+        //printf("Inside parenth: %s\n", temp);
+        solveComplexEq(temp, strlen(temp), buffMag, buffAngle, bP, steps);
+        sprintf(result, "p[%.3f,%.3f]", *buffMag, *buffAngle);
+        fmag = *buffMag;
+        fangle = *buffAngle;
+        //printf("Result: %s: \n", result);
+        formatEq(equation, result, eq_len, startPos-1, endPos+1, *bP, steps);
+        eq_len = strlen(equation);
+        *bP = 0;
+        solveComplexEq(equation, eq_len, buffMag, buffAngle, bP, steps);
+        return;
+    }
+
+
     //check for operators using pemdas
     for (int i = 0; i < eq_len; i++){
         if(equation[i] == '*' || equation[i] == '/'){
@@ -64,11 +96,14 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
 
     //check if any operator found, convert single term if not [update]
     if(op_pos == -1){
+        if((equation[0] == 'i' || equation[0] == 'p') && !bP){
+            printf("\n\nFinal Solution:\n%s\n\n", equation);
+            *steps = 0;
+        }
         return;
     }
 
     if(*steps == 0){
-        clearWindow();
         printf("%d   Solving\t%s\n", *steps, equation);
     }
     else{
@@ -79,9 +114,10 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
     //strings for left and right term 
     char leftTerm[15], rightTerm[15];
     //lt, rt (-1 for imag, 1 for polar) //startPos = index where left term starts //endPos = index where right term ends
-    int lt, rt, startPos, endPos;
+    int lt, rt;
     int ccomplex = 0, ppolar = 0;
     double mag[2], angle[2], real[2], imag[2]; //arrays to store possible values 
+    startPos = 0; endPos = 0;
     
     //find left term
     for(int j = op_pos - 1; j >= 0; j--){
@@ -188,13 +224,16 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
         }
     }
     result[0] = '\0';
+
+    *buffMag = fmag;
+    *buffAngle = fangle;
     //output result
     sprintf(result, "p[%.3f,%.3f]", fmag, fangle);
     //printf("Simplified version: %s\n", result);
-    formatEq(equation, result, eq_len, startPos, endPos, steps);
+    formatEq(equation, result, eq_len, startPos, endPos, *bP, steps);
     //recurvively call function
     eq_len = strlen(equation); //get update length of equation after formatting 
-    solveComplexEq(equation, eq_len, steps);
+    solveComplexEq(equation, eq_len, buffMag, buffAngle, bP, steps);
 
     equation[0] = '\0';
 
@@ -321,7 +360,7 @@ void addPolarImag(double mag[], double angle[], double real[], double imag[], in
 }
 
 //format equation and simplfying terms (resultant equation, result from simplification of two terms, length of equation, index of start of left hand term, index of start of right hand term)
-void formatEq(char *equation, char result[], int eq_len, int startPos, int endPos, int *steps){
+void formatEq(char *equation, char result[], int eq_len, int startPos, int endPos, int bP, int *steps){
     char leftH[500], rightH[500];
     int resultLen = strlen(result);
     int rht = 0; 
@@ -392,18 +431,19 @@ void formatEq(char *equation, char result[], int eq_len, int startPos, int endPo
     // printf("LeftH Length: %i\n", strlen(leftH));
     // printf("RightH Length: %i\n", strlen(rightH));
     // printf("Results length: %i\n", resultLen);
-    printf("Left hand: %s\tRight Hand: %s\tResult: %s\n", leftH, rightH, result);
+    //printf("Left hand: %s\tRight Hand: %s\tResult: %s\n", leftH, rightH, result);
     //printf("\nSolution: \n%s\n\n", equation);
+    
+    // old method to check if final solution //
     int leftH_len = strlen(leftH);
     int rightH_len = strlen(rightH);
-
-    if(!leftH_len && !rightH_len){
+    if(!leftH_len && !rightH_len && !bP){
         printf("\nSolution: \n%s\n\n", equation);
         *steps = 0;
     }
     //clear buff
     leftH[0] = '\0';
     rightH[0] = '\0';
-    result = '\0';
+    //result = '\0';
     return;
 }
