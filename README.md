@@ -14,3 +14,7 @@
 
 ***Compile on Windows***
 * gcc F_complexCalc.c complexCalc.c -o "complexCalc.exe"
+
+
+
+* Feel free to use code in personal projects and edit code as needed for your specific purpose 
