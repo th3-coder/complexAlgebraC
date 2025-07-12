@@ -149,7 +149,7 @@ void solveComplexEq(char *equation, int eq_len, int *steps){
     //     printf("Right Term: %.3f<%.3f\n", real[1], imag[1]);
     // }
     // // printf("LT %i\tRT %i\n", lt, rt);
-    printf("Start Pos: %i\tEnd Pos: %i\n", startPos, endPos);
+    //printf("Start Pos: %i\tEnd Pos: %i\n", startPos, endPos);
     // printf("Operator Position: %i\n", op_pos);
     // printf("\nSolving: %s\n\n", equation);
     
@@ -388,7 +388,7 @@ void formatEq(char *equation, char result[], int eq_len, int startPos, int endPo
     // printf("LeftH Length: %i\n", strlen(leftH));
     // printf("RightH Length: %i\n", strlen(rightH));
     // printf("Results length: %i\n", resultLen);
-    printf("Left hand: %s\tRight Hand: %s\tResult: %s\n", leftH, rightH, result);
+    //printf("Left hand: %s\tRight Hand: %s\tResult: %s\n", leftH, rightH, result);
     //printf("\nSolution: \n%s\n\n", equation);
     int leftH_len = strlen(leftH);
     int rightH_len = strlen(rightH);
