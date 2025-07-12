@@ -17,4 +17,4 @@
 
 
 
-* Feel free to use code in personal projects and edit code as needed for your specific purpose 
+*** Feel free to use code in personal projects and edit code as needed for your specific purpose *** 
