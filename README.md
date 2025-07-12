@@ -10,7 +10,6 @@
 ***Polar/Complex Calculator***
 * *Format*  
     * p(mag,angle)*i(real,imag)...+i(real,mag)
-    * Enter using PEMDAS
 
 
 ***Compile on Windows***
