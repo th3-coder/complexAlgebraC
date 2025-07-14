@@ -8,7 +8,7 @@
 char userInput[256] = {0};
 char solution[256] = {0};
 
-void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAngle, int *bP, int *steps, char *solution){
+void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAngle, int *bP, int *steps, char *solution, char showWork[][100], int *showsteps){
     //find first operator
     char op_ptr;
     int op_pos = -1;
@@ -34,7 +34,7 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
         *bP = 1;
         temp[(endPos-startPos)+1] = '\0';
         //printf("Inside parenth: %s\n", temp);
-        solveComplexEq(temp, strlen(temp), buffMag, buffAngle, bP, steps, solution);
+        solveComplexEq(temp, strlen(temp), buffMag, buffAngle, bP, steps, solution, showWork, showsteps);
         sprintf(result, "p[%.3f,%.3f]", *buffMag, *buffAngle);
         fmag = *buffMag;
         fangle = *buffAngle;
@@ -42,7 +42,7 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
         formatEq(equation, result, eq_len, startPos-1, endPos+1, *bP, steps);
         eq_len = strlen(equation);
         *bP = 0;
-        solveComplexEq(equation, eq_len, buffMag, buffAngle, bP, steps, solution);
+        solveComplexEq(equation, eq_len, buffMag, buffAngle, bP, steps, solution, showWork, showsteps);
         return;
     }
 
@@ -70,6 +70,7 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
         if((equation[0] == 'i' || equation[0] == 'p') && !bP){
             printf("\n\nFinal Solution:\n%s\n\n", equation);
             *steps = 0;
+            *showsteps = 0;
         }
         return;
     }
@@ -169,29 +170,29 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
     //determine types and call functions to simplify equation
     if(op == '*' || op == '/'){
         if(lt == 1 && rt == 1){
-            multPolar(mag, angle, &fmag, &fangle, op);
+            multPolar(mag, angle, &fmag, &fangle, op, showWork, showsteps);
         }
         else if (lt == -1 && rt == -1){
             //call multiply complex function 
-            multComplex(real, imag, &fmag, &fangle, op);
+            multComplex(real, imag, &fmag, &fangle, op, showWork, showsteps);
         }
         else{
             //call multiply polar and complex function
-            multPolarImag(mag, angle, real, imag, ccomplex, ppolar, &fmag, &fangle, lt, op);
+            multPolarImag(mag, angle, real, imag, ccomplex, ppolar, &fmag, &fangle, lt, op, showWork, showsteps);
         }
     }
     else if(op == '+' || op == '-'){
         if(lt == 1 && rt == 1){
             //add polar eq function
-            addPolar(mag, angle, &fmag, &fangle, op);
+            addPolar(mag, angle, &fmag, &fangle, op, showWork, showsteps);
         }
         else if (lt == -1 && rt == -1){
             //add complex function
-            addComplex(real, imag, &fmag, &fangle, op);
+            addComplex(real, imag, &fmag, &fangle, op, showWork, showsteps);
         }
         else{
             //add polar and complex function
-            addPolarImag(mag, angle, real, imag, ccomplex, ppolar, &fmag, &fangle, lt, op);
+            addPolarImag(mag, angle, real, imag, ccomplex, ppolar, &fmag, &fangle, lt, op, showWork, showsteps);
         }
     }
     result[0] = '\0';
@@ -204,82 +205,145 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
     formatEq(equation, result, eq_len, startPos, endPos, *bP, steps);
     //recurvively call function
     eq_len = strlen(equation); //get update length of equation after formatting 
-    solveComplexEq(equation, eq_len, buffMag, buffAngle, bP, steps, solution);
+    solveComplexEq(equation, eq_len, buffMag, buffAngle, bP, steps, solution, showWork, showsteps);
 
     equation[0] = '\0';
 
     return;
 }
 
-void addPolar(double mag[], double angle[], double *fmag, double *fangle, char op){
+void addPolar(double mag[], double angle[], double *fmag, double *fangle, char op, char showWork[][100], int *showsteps){
     double real, imag;
-    angle[0] *= (180/PI);
-    angle[1] *= (180/PI);
+    angle[0] *= (PI/180);
+    angle[1] *= (PI/180);
+    snprintf(showWork[*showsteps], 256, "Step %i\t Convert angle: (%.2f * 180) / PI = %.3f",
+                *showsteps, angle[0]*(180/PI), angle[0]);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 256, "Step %i\t Convert angle: (%.2f * 180) / PI = %.3f",
+                *showsteps, angle[1]*(180/PI), angle[1]);
+    (*showsteps)++;
     
     if(op != '-'){
         real = mag[0]*(cos(angle[0])) + mag[1]*(cos(angle[1]));
         imag = mag[0]*(sin(angle[0])) + mag[1]*(sin(angle[1]));
-    } 
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f*cos(%.2f) + %.3f*cos(%.2f) = %.3f",
+                *showsteps, mag[0], angle[0], mag[1], angle[1], real);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f*cos(%.2f) + %.3f*sin(%.2f) = %.3f",
+                *showsteps, mag[0], angle[0], mag[1], angle[1], imag);
+        (*showsteps)++;
+    }
     else{
         real = mag[0]*(cos(angle[0])) - mag[1]*(cos(angle[1]));
         imag = mag[0]*(sin(angle[0])) - mag[1]*(sin(angle[1]));
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f*cos(%.2f) + %.3f*cos(%.2f) = %.3f",
+                *showsteps, mag[0], angle[0], mag[1], angle[1], real);
     }
 
     *fmag = sqrt(pow(real,2) + pow(imag,2));
     *fangle = atan(imag/real);
+    snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                *showsteps, real, imag, *fmag);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 256, "Step %i\t atan(%.2f / %.2f) = %.3f",
+                *showsteps, imag, real, *fangle);
+    (*showsteps)++;
     return;
 }
 
-void multPolar(double mag[], double angle[], double *fmag, double *fangle, char op){
+void multPolar(double mag[], double angle[], double *fmag, double *fangle, char op, char showWork[][100], int *showsteps){
     if(op != '/'){
         *fmag = (mag[0])*(mag[1]);
         *fangle = angle[0] + angle[1];
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f * %.3f = %.3f",
+                *showsteps, mag[0], mag[1], *fmag);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f + %.3f = %.3f",
+                *showsteps, angle[0], angle[1], *fangle);
+        (*showsteps)++;
     }
     else {
         *fmag = (mag[0])/(mag[1]);
         *fangle = angle[0] - angle[1];
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f / %.3f = %.3f", 
+                *showsteps, mag[0], mag[1]);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f - %.3f = %.3f", 
+                *showsteps, angle[0], angle[1]);
+        (*showsteps)++;
     }
     return;
 }
 
-void addComplex(double real[], double imag[], double *fmag, double *fangle, char op){
+void addComplex(double real[], double imag[], double *fmag, double *fangle, char op, char showWork[][100], int *showsteps){
     double freal, fimag;
     if(op != '-'){
         freal = real[0] + real[1];
         fimag = imag[0] + imag[1];
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f + %.3f = %.3f",
+                *showsteps, real[0], real[1], *fmag);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f + %.3f = %.3f",
+                *showsteps, imag[0], imag[1], *fmag);
+        (*showsteps)++;
     }
     else{
         freal = real[0] - real[1];
         fimag = imag[0] - imag[1];
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f - %.3f = %.3f",
+                *showsteps, real[0], real[1], *fmag);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f - %.3f = %.3f",
+                *showsteps, imag[0], imag[1], *fmag);
+        (*showsteps)++;
     }
 
     *fmag = sqrt(pow(freal,2)+pow(fimag,2));
     *fangle = (180/PI)*(atan(fimag/freal));
+    snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                *showsteps, real, imag, *fmag);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 256, "Step %i\t atan(%.2f / %.2f) = %.3f",
+                *showsteps, imag, real, *fangle);
+    (*showsteps)++;
     return;
 }
 
-void multComplex(double real[], double imag[], double *fmag, double *fangle, char op){
+void multComplex(double real[], double imag[], double *fmag, double *fangle, char op, char showWork[][100], int *showsteps){
     double tempMag[2], tempAngle[2];
     if(op != '/'){
         *fmag = sqrt(pow(real[0],2)+pow(imag[0],2))*sqrt(pow(real[1],2)+pow(imag[1],2));
         *fangle = (180/PI)*(atan(imag[0]/real[0]) + atan(imag[1]/real[1]));
+        snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) * sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                 *showsteps, real[0], imag[0], real[1], imag[1], *fmag);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t (180/PI)*(atan(%.3f / %.3f) + atan(%.3f/%.3f)",
+                 *showsteps, imag[0], imag[1], real[1], imag[1], *fmag);
+        (*showsteps)++;
     }
     else{
         *fmag = sqrt(pow(real[0],2)+pow(imag[0],2))/sqrt(pow(real[1],2)+pow(imag[1],2));
         *fangle = (180/PI)*(atan(imag[0]/real[0]) - atan(imag[1]/real[1]));
+        snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) / sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                 *showsteps, real[0], imag[0], real[1], imag[1], *fmag);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i\t (180 / PI) * (atan(%.3f / %.3f) - atan(%.3f / %.3f)",
+                 *showsteps, imag[0], imag[1], real[1], imag[1], *fmag);
+        (*showsteps)++;
     }
+    return;
 }
 
-void multPolarImag(double mag[], double angle[], double real[], double imag[], int ccomplex, int ppolar, double *fmag, double *fangle, int lt, char op){
+void multPolarImag(double mag[], double angle[], double real[], double imag[], int ccomplex, int ppolar, double *fmag, double *fangle, int lt, char op, char showWork[][100], int *showsteps){
     double tempAngle;
     if(op != '/'){
         if(lt == 1){
-            tempAngle = (180/PI)*(atan(imag[1]/real[1]));
+            tempAngle = (PI/180)*(atan(imag[1]/real[1]));
             *fmag = mag[0]*sqrt(pow(imag[1],2)+pow(real[1],2));
             *fangle = angle[0] + tempAngle;
         }
         else if(lt == -1){
-            tempAngle = (180/PI)*(atan(imag[0]/real[0]));
+            tempAngle = (PI/180)*(atan(imag[0]/real[0]));
             *fmag = mag[1]*sqrt(pow(imag[0],2)+pow(real[0],2));
             *fangle = angle[1] + tempAngle;
         }
@@ -294,9 +358,10 @@ void multPolarImag(double mag[], double angle[], double real[], double imag[], i
             *fangle = tempAngle - angle[1];    
         }
     }
+    return;
 }
 
-void addPolarImag(double mag[], double angle[], double real[], double imag[], int ccomplex, int ppolar, double *fmag, double *fangle, int lt, char op){
+void addPolarImag(double mag[], double angle[], double real[], double imag[], int ccomplex, int ppolar, double *fmag, double *fangle, int lt, char op, char showWork[][100], int *showsteps){
     double angleRad = (PI/180)*angle[0];
     double tempReal, tempImag;
     ppolar -= 1;
@@ -328,6 +393,8 @@ void addPolarImag(double mag[], double angle[], double real[], double imag[], in
     }
     *fmag = sqrt(pow(tempReal,2)+pow(tempImag,2));
     *fangle = (180/PI)*(atan(tempImag/tempReal));
+    (*showsteps)++;
+    return;
 }
 
 //format equation and simplfying terms (resultant equation, result from simplification of two terms, length of equation, index of start of left hand term, index of start of right hand term)
