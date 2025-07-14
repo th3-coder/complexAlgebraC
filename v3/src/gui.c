@@ -5,9 +5,8 @@
 #define APPTITLE "Push Buttons"
 #define IDC_MAIN_BUTTON_1 9001
 #define IDC_MAIN_BUTTON_2 9002
-//#define IDC_STATIC_OUTPUT 9003
+#define IDC_STATIC_OUTPUT 9003
 
-// ✅ Make controls global so all message handlers can access them
 HWND PushButton_Handle1, PushButton_Handle2, hEdit;
 
 ATOM Init_Window_Class(HINSTANCE);
@@ -78,7 +77,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 0, "EDIT", "",
                 WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
                 0, 0, 0, 0,
-                hWnd, NULL, GetModuleHandle(NULL), NULL);
+                hWnd, (HMENU)IDC_STATIC_OUTPUT, GetModuleHandle(NULL), NULL);
 
             // Create buttons
             PushButton_Handle1 = CreateWindow(
@@ -131,32 +130,51 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         case WM_COMMAND:
             switch (LOWORD(wParam)) {
                     case IDC_MAIN_BUTTON_1: {
-                    GetWindowText(hEdit, userInput, sizeof(userInput));
-                    InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
-                    //printf(userInput);
-                    int steps = 0, bP = 0;
-                    //clearWindow();
-                    double buffMag, buffAngle;
-                    int len_temp = strlen(userInput);
-                    solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution);
-                    sprintf(solution, "Result: p[%.3f, %.3f]", buffMag, buffAngle);
-                    break;
+                        GetWindowText(hEdit, userInput, sizeof(userInput));
+                        InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
+                        //printf(userInput);
+                        int steps = 0, bP = 0;
+                        //clearWindow();
+                        double buffMag, buffAngle;
+                        int len_temp = strlen(userInput);
+                        solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution);
+                        sprintf(solution, "Result: p[%.3f, %.3f]", buffMag, buffAngle);
+                        break;
                 }
                 case IDC_MAIN_BUTTON_2:
-                    MessageBox(hWnd, "You Clicked Button 2", "Message", MB_OK);
+                    //MessageBox(hWnd, "You Clicked Button 2", "Message", MB_OK);
                     break;
-                case WM_KEYDOWN:
-                    if(wParam = VK_RETURN){
-                    GetWindowText(hEdit, userInput, sizeof(userInput));
-                    InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
-                    //printf(userInput);
-                    int steps = 0, bP = 0;
-                    //clearWindow();
-                    double buffMag, buffAngle;
-                    int len_temp = strlen(userInput);
-                    solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution);
-                    sprintf(solution, "Result: p[%.3f, %.3f]", buffMag, buffAngle);
+
+                case IDC_STATIC_OUTPUT:
+                    if(HIWORD(wParam) == EN_UPDATE){
+                        char buffer[256];
+                        GetWindowText(hEdit, buffer, sizeof(buffer));
+                        int len_buffer = strlen(buffer);
+                        
+                        if(buffer[len_buffer-1] == '='){
+                            buffer[len_buffer-1] = '\0';
+                            InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
+                            //printf(userInput);
+                            int steps = 0, bP = 0;
+                            //clearWindow();
+                            double buffMag, buffAngle;
+                            solveComplexEq(buffer, len_buffer, &buffMag, &buffAngle, &bP, &steps, solution);
+                            sprintf(solution, "Result: p[%.3f, %.3f]", buffMag, buffAngle);
+                            buffer[0] = '\0';
+                        }
                     }
+                // case WM_KEYDOWN:
+                //     if(wParam = VK_RETURN){
+                //         GetWindowText(hEdit, userInput, sizeof(userInput));
+                //         InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
+                //         //printf(userInput);
+                //         int steps = 0, bP = 0;
+                //         //clearWindow();
+                //         double buffMag, buffAngle;
+                //         int len_temp = strlen(userInput);
+                //         solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution);
+                //         sprintf(solution, "Result: p[%.3f, %.3f]", buffMag, buffAngle);
+                //     }
             }
             break;
             
