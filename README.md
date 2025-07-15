@@ -1,13 +1,13 @@
 ***ComplexAlgebraC - Circuit Analysis*** 
 
-***Convert Single Terms*** 
+***Convert Single Terms*** (v1) 
 * Polar form ---> complex form 
 
 
 * Complex form ---> polar form 
 
 
-***Polar/Complex Calculator***
+***Polar/Complex Calculator*** (v3)
 * *Format*  
     * p[mag,angle]*i[real,imag]...+i[real,mag]
 * type = sign at end of equation to compute automatically
