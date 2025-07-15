@@ -9,11 +9,12 @@
 
 ***Polar/Complex Calculator***
 * *Format*  
-    * p(mag,angle)*i(real,imag)...+i(real,mag)
-
+    * p[mag,angle]*i[real,imag]...+i[real,mag]
+* type = sign at end of equation to compute automatically
 
 ***Compile on Windows***
 * gcc F_complexCalc.c complexCalc.c -o "complexCalc.exe"
+
 
 
 
