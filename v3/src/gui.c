@@ -3,7 +3,7 @@
 #include <math.h>
 #include "complex.h"
 
-#define APPTITLE "Push Buttons"
+#define APPTITLE "Complex/Polar Calculator"
 #define IDC_MAIN_BUTTON_1 9001
 #define IDC_MAIN_BUTTON_2 9002
 #define IDC_STATIC_OUTPUT 9003
@@ -220,11 +220,15 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, RGB(0,0,0));
             for(int i = 1; i < showsteps; i++){
+                if(i % 2 != 0){
                 TextOut(hdc, 30, 20*i, showWork[i], strlen(showWork[i]));
+                } else {
+                    TextOut(hdc, 60, 20*i, showWork[i], strlen(showWork[i]));    
+                }
             }
             TextOut(hdc, swidth/4 - swidth/8, sheight-125, solution, strlen(solution));
             strcpy(prevResult[resultCounter++], solution);
-            showsteps = 0;
+            showsteps = 1;
             for(int i = 0; i < sizeof(showWork)/sizeof(showWork[0]); i++){
                 showWork[i][0] = '\0';
             }
