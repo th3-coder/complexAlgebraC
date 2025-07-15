@@ -33,6 +33,7 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
         }
         *bP = 1;
         temp[(endPos-startPos)+1] = '\0';
+        op = '\0';
         //printf("Inside parenth: %s\n", temp);
         solveComplexEq(temp, strlen(temp), buffMag, buffAngle, bP, steps, solution, showWork, showsteps);
         sprintf(result, "p[%.3f,%.3f]", *buffMag, *buffAngle);
@@ -47,22 +48,36 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
     }
 
 
+    int findOp = 0;
     //check for operators using pemdas
     for (int i = 0; i < eq_len; i++){
-        if(equation[i] == '*' || equation[i] == '/'){
+        if(equation[i] == '['){
+            printf("Start bracket %i\t", i);
+            findOp = 1;
+            //continue;
+        }
+        else if (i == 2) {
+            printf("End bracket %i\n", i);
+            findOp = 0;
+            //continue;
+        }
+        if(equation[i] == '*' || equation[i] == '/')
+        {
             op = equation[i];
             op_pos = i;
             break;
         }
-    }
-    if(op_pos == -1){
-        for (int i = 0; i < eq_len; i++){
-            if (equation[i] == '+' || equation[i] == '-') {
-                op = equation[i];
-                op_pos = i;
-                break;
-            }
         }
+        if(op_pos == -1 && findOp)
+        {
+            for (int i = 0; i < eq_len; i++)
+            {
+                if (equation[i] == '+' || equation[i] == '-') {
+                    op = equation[i];
+                    op_pos = i;
+                    break;
+                }
+            }
     }
 
     //check if any operator found, convert single term if not [update]
@@ -152,7 +167,7 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
     // else if(lt == -1){
     //     printf("Left Term: %.3f<%.3f\n", real[0], imag[0]);
     // }
-    // printf("Operator: %c\n", op);
+     printf("Operator: %c\n", op);
     // if(rt == 1){
     //     printf("Right Term: %.3f<%.3f\n", mag[1], angle[1]);
     // }
@@ -216,36 +231,35 @@ void addPolar(double mag[], double angle[], double *fmag, double *fangle, char o
     double real, imag;
     angle[0] *= (PI/180);
     angle[1] *= (PI/180);
-    snprintf(showWork[*showsteps], 256, "Step %i\t Convert angle: (%.2f * 180) / PI = %.3f",
-                *showsteps, angle[0]*(180/PI), angle[0]);
-    (*showsteps)++;
-    snprintf(showWork[*showsteps], 256, "Step %i\t Convert angle: (%.2f * 180) / PI = %.3f",
-                *showsteps, angle[1]*(180/PI), angle[1]);
-    (*showsteps)++;
     
     if(op != '-'){
         real = mag[0]*(cos(angle[0])) + mag[1]*(cos(angle[1]));
         imag = mag[0]*(sin(angle[0])) + mag[1]*(sin(angle[1]));
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f*cos(%.2f) + %.3f*cos(%.2f) = %.3f",
-                *showsteps, mag[0], angle[0], mag[1], angle[1], real);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f*cos(%.2f) + %.3f*sin(%.2f) = %.3f",
-                *showsteps, mag[0], angle[0], mag[1], angle[1], imag);
-        (*showsteps)++;
     }
     else{
-        real = mag[0]*(cos(angle[0])) - mag[1]*(cos(angle[1]));
-        imag = mag[0]*(sin(angle[0])) - mag[1]*(sin(angle[1]));
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f*cos(%.2f) + %.3f*cos(%.2f) = %.3f",
-                *showsteps, mag[0], angle[0], mag[1], angle[1], real);
+        real = (mag[0]*(cos(angle[0])) - mag[1]*(cos(angle[1])));
+        imag = (mag[0]*(sin(angle[0])) - mag[1]*(sin(angle[1])));
     }
 
-    *fmag = sqrt(pow(real,2) + pow(imag,2));
-    *fangle = atan(imag/real);
-    snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+    *fmag = sqrt(pow(real,2) + pow(imag,2));    
+    
+    *fangle = (180/PI)*atan2(imag,real);
+
+    snprintf(showWork[*showsteps], 256, "Step %i: Convert angle 1\t (%.2f * 180) / PI = %.3f",
+                *showsteps, angle[0]*(180/PI), angle[0]);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 256, "Step %i: Convert angle 2\t (%.2f * 180) / PI = %.3f",
+                *showsteps, angle[1]*(180/PI), angle[1]);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 512, "Step %i:Find real terms by multiply by cos(angle) %.3f*cos(%.2f) %c %.3f*cos(%.2f) = %.3f",
+                *showsteps, mag[0], angle[0], op, mag[1], angle[1], real);
+    (*showsteps)++;
+        snprintf(showWork[*showsteps], 512, "Step %i:Find imaginary terms by multiply by sin(angle) %.3f*cos(%.2f) %c %.3f*cos(%.2f) = %.3f",
+                *showsteps, mag[0], angle[0], op,  mag[1], angle[1], imag);
+    snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
                 *showsteps, real, imag, *fmag);
     (*showsteps)++;
-    snprintf(showWork[*showsteps], 256, "Step %i\t atan(%.2f / %.2f) = %.3f",
+    snprintf(showWork[*showsteps], 256, "Step %i: Find angle using inverse tangent atan(%.2f / %.2f) = %.3f",
                 *showsteps, imag, real, *fangle);
     (*showsteps)++;
     return;
@@ -255,23 +269,16 @@ void multPolar(double mag[], double angle[], double *fmag, double *fangle, char 
     if(op != '/'){
         *fmag = (mag[0])*(mag[1]);
         *fangle = angle[0] + angle[1];
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f * %.3f = %.3f",
-                *showsteps, mag[0], mag[1], *fmag);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f + %.3f = %.3f",
-                *showsteps, angle[0], angle[1], *fangle);
-        (*showsteps)++;
     }
     else {
         *fmag = (mag[0])/(mag[1]);
         *fangle = angle[0] - angle[1];
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f / %.3f = %.3f", 
-                *showsteps, mag[0], mag[1]);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f - %.3f = %.3f", 
-                *showsteps, angle[0], angle[1]);
-        (*showsteps)++;
     }
+    snprintf(showWork[*showsteps], 256, "Step %i: Combine magnitudes\t %.3f %c %.3f = %.3f",
+                *showsteps, mag[0], op, mag[1], *fmag);
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], 256, "Step %i: Combine angles\t %.3f %c %.3f = %.3f",
+                *showsteps, angle[0], op, angle[1], *fangle);
     return;
 }
 
@@ -280,31 +287,25 @@ void addComplex(double real[], double imag[], double *fmag, double *fangle, char
     if(op != '-'){
         freal = real[0] + real[1];
         fimag = imag[0] + imag[1];
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f + %.3f = %.3f",
-                *showsteps, real[0], real[1], *fmag);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f + %.3f = %.3f",
-                *showsteps, imag[0], imag[1], *fmag);
-        (*showsteps)++;
     }
     else{
         freal = real[0] - real[1];
         fimag = imag[0] - imag[1];
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f - %.3f = %.3f",
-                *showsteps, real[0], real[1], *fmag);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t %.3f - %.3f = %.3f",
-                *showsteps, imag[0], imag[1], *fmag);
-        (*showsteps)++;
     }
 
     *fmag = sqrt(pow(freal,2)+pow(fimag,2));
-    *fangle = (180/PI)*(atan(fimag/freal));
-    snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
-                *showsteps, real, imag, *fmag);
+    *fangle = (180/PI)*(atan2(fimag,freal));
+    
+    snprintf(showWork[*showsteps], 256, "Step %i: Combine real terms\t %.3f %c %.3f = %.3f",
+                *showsteps, real[0], op, real[1], freal);
     (*showsteps)++;
-    snprintf(showWork[*showsteps], 256, "Step %i\t atan(%.2f / %.2f) = %.3f",
-                *showsteps, imag, real, *fangle);
+    snprintf(showWork[*showsteps], 256, "Step %i: Combine Imaginary Terms\t %.3f %c %.3f = %.3f",
+                *showsteps, imag[0], op, imag[1], fimag);
+    snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude\t sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                *showsteps, freal, fimag, *fmag);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 256, "Step %i: Take inverse tangent to find angle\t atan(%.2f / %.2f) = %.3f",
+                *showsteps, fimag, freal, *fangle);
     (*showsteps)++;
     return;
 }
@@ -313,49 +314,96 @@ void multComplex(double real[], double imag[], double *fmag, double *fangle, cha
     double tempMag[2], tempAngle[2];
     if(op != '/'){
         *fmag = sqrt(pow(real[0],2)+pow(imag[0],2))*sqrt(pow(real[1],2)+pow(imag[1],2));
-        *fangle = (180/PI)*(atan(imag[0]/real[0]) + atan(imag[1]/real[1]));
-        snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) * sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
-                 *showsteps, real[0], imag[0], real[1], imag[1], *fmag);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t (180/PI)*(atan(%.3f / %.3f) + atan(%.3f/%.3f)",
-                 *showsteps, imag[0], imag[1], real[1], imag[1], *fmag);
-        (*showsteps)++;
+        int tempAngle1, tempAngle2;
+        *fangle = (180/PI)*(atan2(imag[0],real[0]) + atan2(imag[1],real[1]));
     }
     else{
         *fmag = sqrt(pow(real[0],2)+pow(imag[0],2))/sqrt(pow(real[1],2)+pow(imag[1],2));
-        *fangle = (180/PI)*(atan(imag[0]/real[0]) - atan(imag[1]/real[1]));
-        snprintf(showWork[*showsteps], 256, "Step %i\t sqrt((%.3f)^2 + (%.3f)^2) / sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
-                 *showsteps, real[0], imag[0], real[1], imag[1], *fmag);
-        (*showsteps)++;
-        snprintf(showWork[*showsteps], 256, "Step %i\t (180 / PI) * (atan(%.3f / %.3f) - atan(%.3f / %.3f)",
-                 *showsteps, imag[0], imag[1], real[1], imag[1], *fmag);
-        (*showsteps)++;
+        *fangle = (180/PI)*(atan2(imag[0],real[0]) - atan2(imag[1],real[1]));
     }
+    
+    snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude of complex terms and combine qrt((%.3f)^2 + (%.3f)^2) %c sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                 *showsteps, real[0], imag[0], op, real[1], imag[1], *fmag);
+    (*showsteps)++;
+    snprintf(showWork[*showsteps], 256, "Step %i: Convert and combine angles\t (180/PI)*(atan(%.3f / %.3f) %c atan(%.3f/%.3f) = %.3f",
+                 *showsteps, imag[0], imag[0], op, real[1], imag[1], *fangle);
+    (*showsteps)++;
     return;
 }
 
 void multPolarImag(double mag[], double angle[], double real[], double imag[], int ccomplex, int ppolar, double *fmag, double *fangle, int lt, char op, char showWork[][100], int *showsteps){
     double tempAngle;
+    // /int lh[2], rh[2];
     if(op != '/'){
         if(lt == 1){
-            tempAngle = (PI/180)*(atan(imag[1]/real[1]));
-            *fmag = mag[0]*sqrt(pow(imag[1],2)+pow(real[1],2));
-            *fangle = angle[0] + tempAngle;
+            if(real[1] == 0 || imag[1] == 0){
+                tempAngle = 0;
+            } else{
+            tempAngle = (PI/180)*(atan2(imag[1],real[1]));
+            }
+            *fmag = mag[0]*sqrt(pow(real[1],2)+pow(imag[1],2));
+            *fangle = (180/PI)*(angle[0] + tempAngle);
+            
+            snprintf(showWork[*showsteps], 256, "Step %i: Convert Angle\t (PI / 180 ) * atan(%.2f / %.2f) = %.3f",
+                 *showsteps, imag[1], real[1], tempAngle);
+            (*showsteps)++;
+            snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude of complex terms and multiply\t %.3f * sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                    *showsteps, mag[0], real[1], imag[1], *fmag);
+            (*showsteps)++;
+            snprintf(showWork[*showsteps], 256, "Step %i: Add angles\t %.3f + %.3f = %.3f ",
+                    *showsteps, real[1], imag[1], *fangle);
+            (*showsteps)++;
         }
         else if(lt == -1){
-            tempAngle = (PI/180)*(atan(imag[0]/real[0]));
-            *fmag = mag[1]*sqrt(pow(imag[0],2)+pow(real[0],2));
-            *fangle = angle[1] + tempAngle;
+            if(imag[0] == 0 || real [0] == 0){
+                tempAngle = 0;
+            } else{
+            tempAngle = (PI/180)*(atan2(imag[0],real[0]));
+            }
+            *fmag = mag[1]*sqrt(pow(real[0],2)+pow(imag[0],2));
+            *fangle = (180/PI)*(angle[1] + tempAngle);
+            
+            snprintf(showWork[*showsteps], 256, "Step %i: Convert Angle\t (PI / 180 ) * atan(%.2f / %.2f) = %.3f",
+                 *showsteps, imag[0], real[0], tempAngle);
+            (*showsteps)++;
+            snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude of complex terms and multiply\t  %.3f * sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                    *showsteps, mag[1], real[0], imag[0], *fmag);
+            (*showsteps)++;
+            snprintf(showWork[*showsteps], 256, "Step %i: Add angles\t %.3f + %.3f = %.3f ",
+                    *showsteps, angle[1], tempAngle, *fangle);
+            (*showsteps)++;
         }
     }
     else{
         if(lt == 1){
-            *fmag = mag[0]/sqrt(pow(imag[1],2)+pow(real[1],2));
-            *fangle = angle[0] - tempAngle;
+            tempAngle = (PI/180)*atan2(imag[1],imag[1]);
+            *fmag = mag[0]/sqrt(pow(real[1],2)+pow(imag[1],2));
+            *fangle = (180/PI)*(angle[0] - tempAngle);
+            
+            snprintf(showWork[*showsteps], 256, "Step %i: Convert Angle\t (PI / 180 ) * atan(%.2f / %.2f) = %.3f",
+                 *showsteps, imag[1], real[1], tempAngle);
+            (*showsteps)++;     
+            snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude of complex terms and divide\t %.3f / sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                    *showsteps, mag[0], real[1], imag[1], *fmag);
+            (*showsteps)++;
+            snprintf(showWork[*showsteps], 256, "Step %i:\t Subtract angles  %.3f - %.3f = %.3f ",
+                    *showsteps, angle[0], tempAngle, *fangle);
+            (*showsteps)++;
         }
         else if (lt == -1){
-            *fmag = sqrt(pow(imag[0],2)+pow(real[0],2))/mag[1];
-            *fangle = tempAngle - angle[1];    
+            tempAngle = (PI/180)*atan2(imag[0],imag[0]);
+            *fmag = mag[1]/sqrt(pow(real[0],2)+pow(imag[0],2))/mag[1];
+            *fangle = (180/PI)*(tempAngle - angle[1]);
+            
+            snprintf(showWork[*showsteps], 256, "Step %i: Convert Angle\t (PI / 180 ) * atan(%.2f / %.2f) = %.3f",
+                 *showsteps, imag[0], real[0], tempAngle);
+            (*showsteps)++;     
+            snprintf(showWork[*showsteps], 256, "Step %i: Take quadratic sum to find magnitude of complex terms and multiply\t %.3f / sqrt((%.3f)^2 + (%.3f)^2) = %.3f",
+                    *showsteps, mag[1], real[0], imag[0], *fmag);
+            (*showsteps)++;
+            snprintf(showWork[*showsteps], 256, "Step %i: Subtract angles\t %.3f - %.3f = %.3f ",
+                    *showsteps, angle[0], tempAngle, *fangle);
+            (*showsteps)++;    
         }
     }
     return;
@@ -367,11 +415,11 @@ void addPolarImag(double mag[], double angle[], double real[], double imag[], in
     ppolar -= 1;
     ppolar -= 1;
 
-    if(lt = 1){
+    if(lt == 1){
         ppolar = 0;
         ccomplex = 1;
     }
-    else if(lt = -1){
+    else if(lt == -1){
         ppolar = 1;
         ccomplex = 1;
     }
@@ -391,9 +439,15 @@ void addPolarImag(double mag[], double angle[], double real[], double imag[], in
             tempImag = mag[ppolar]*sin(angleRad) - imag[ccomplex];
         }
     }
+    
     *fmag = sqrt(pow(tempReal,2)+pow(tempImag,2));
-    *fangle = (180/PI)*(atan(tempImag/tempReal));
-    (*showsteps)++;
+    *fangle = (180/PI)*(atan2(tempImag,tempReal));
+    
+    snprintf(showWork[*showsteps], 256, "Step %i Convert polar to complex and combine real terms %.3f %c %.3f*cos(%.2f) = %.3f",
+            *showsteps, real[ccomplex], op, mag[ppolar], angleRad, tempReal);
+    snprintf(showWork[*showsteps], 256, "Step %i:Convert polar to complex and combine imaginary terms %.3f %c %.3f*sin(%.2f) = %.3f",
+            *showsteps, real[ccomplex], op, mag[ppolar], angleRad, tempImag);
+    
     return;
 }
 

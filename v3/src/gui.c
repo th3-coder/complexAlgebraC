@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <math.h>
 #include "complex.h"
 
 #define APPTITLE "Push Buttons"
@@ -26,7 +27,7 @@ LRESULT CALLBACK WinProc(HWND, UINT, WPARAM, LPARAM);
 
 //data variables
 char prevResult[256][100];
-char showWork[256][100];
+char showWork[512][100];
 // counters
 int resultCounter = 0, steps = 0, showsteps = 1;
 
@@ -152,7 +153,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 double buffMag, buffAngle;
                 int len_temp = strlen(userInput);
                 solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
-                sprintf(solution, "Result: %.3f /_ %.3f", buffMag, buffAngle);
+                snprintf(solution, sizeof(solution), "RESULT: Polar Form %.3f /_ %.3f    Complex Form %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle), buffMag*sin(buffAngle));
 
                 InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
                 UpdateWindow(hWnd);
@@ -167,7 +168,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                         double buffMag, buffAngle;
                         int len_temp = strlen(userInput);
                         solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
-                        sprintf(solution, "Result: %.3f/_%.3f", buffMag, buffAngle);
+                        snprintf(solution, sizeof(solution), "RESULT: Polar Form %.3f /_ %.3f    Complex Form %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle), buffMag*sin(buffAngle));
                         InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
                         break;
                 }
@@ -186,7 +187,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                             buffer[len_buffer-1] = '\0';
                             double buffMag, buffAngle;
                             solveComplexEq(buffer, len_buffer, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
-                            sprintf(solution, "Result: %.3f/_%.3f", buffMag, buffAngle);
+                            snprintf(solution, sizeof(solution), "RESULT: Polar Form: %.3f/_%.3f    Complex Form: %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle*(PI/180)), buffMag*sin(buffAngle*(PI/180)));
                             buffer[0] = '\0';
                             InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
                         }
@@ -221,7 +222,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             for(int i = 1; i < showsteps; i++){
                 TextOut(hdc, 30, 20*i, showWork[i], strlen(showWork[i]));
             }
-            TextOut(hdc, swidth/2.4, sheight-125, solution, strlen(solution));
+            TextOut(hdc, swidth/4 - swidth/8, sheight-125, solution, strlen(solution));
             strcpy(prevResult[resultCounter++], solution);
             showsteps = 0;
             for(int i = 0; i < sizeof(showWork)/sizeof(showWork[0]); i++){
@@ -230,7 +231,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         }
         // debug //
         // char debug[512];
-        // sprintf(debug, "DEBUG: %s", solution);
+        // snprintf(debug, "DEBUG: %s", solution);
         // TextOut(hdc, 20, 40, debug, strlen(debug));
 
         EndPaint(hWnd, &ps);
