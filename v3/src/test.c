@@ -7,12 +7,12 @@ int main(){
     int steps = 0, bP = 0;
     clearWindow();
     double buffMag, buffAngle;
-    char showWork[512][100];
+    char showWork[64][256];
     int showsteps=0;
     //main loop
     while(1)
     {
-        printf("Type in equation: p(mag, angle) i(real, imag):\n");
+        printf("Type in equation: p[mag, angle] i[real, imag]:\n");
         fgets(userInput, sizeof(userInput), stdin);
         
         int len_temp = strlen(userInput);

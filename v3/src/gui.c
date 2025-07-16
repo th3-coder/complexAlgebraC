@@ -26,10 +26,15 @@ BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WinProc(HWND, UINT, WPARAM, LPARAM);
 
 //data variables
-char prevResult[256][100];
-char showWork[512][100];
+char prevResult[128][256];
+char showWork[128][256];
+char showWorkBuffer[128][256];
+char prevbuffer[256];
 // counters
-int resultCounter = 0, steps = 0, showsteps = 1;
+int resultCounter = 0, steps = 0, showsteps = 1, showstepsBuffer;
+//booleans
+int notTyping = 1;
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR nCmdLine, int nCmdShow) {
     
@@ -110,7 +115,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 0, 0, 0, 0,
                 hWnd, (HMENU)IDC_MAIN_BUTTON_2, GetModuleHandle(NULL), NULL);
 
-            break;
+        break;
         }
 
         case WM_SIZE: {
@@ -143,58 +148,83 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 height - buttonHeight - spacing,
                 buttonWidth*0.75, buttonHeight*0.5, TRUE);
 
-            break;
+        break;
         }
         
-        case WM_KEYDOWN:
-            if(wParam == VK_RETURN){
-                GetWindowText(hEdit, userInput, sizeof(userInput));
-                int bP = 0;
-                double buffMag, buffAngle;
-                int len_temp = strlen(userInput);
-                solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
-                snprintf(solution, sizeof(solution), "RESULT: Polar Form %.3f /_ %.3f    Complex Form %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle), buffMag*sin(buffAngle));
-
-                InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
-                UpdateWindow(hWnd);
-            }
-            break;
+        // case WM_KEYDOWN:
+        //     if(wParam == VK_RETURN){
+        //         GetWindowText(hEdit, userInput, sizeof(userInput));
+        //         int bP = 0;
+        //         double buffMag, buffAngle;
+        //         int len_temp = strlen(userInput);
+        //         solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
+        //         snprintf(solution, sizeof(solution), "RESULT: Polar Form %.3f /_ %.3f    Complex Form %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle), buffMag*sin(buffAngle));
+        //         InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
+        //         UpdateWindow(hWnd);
+        //     }
+        // break;
 
         case WM_COMMAND:
             int bP = 0;
             switch (LOWORD(wParam)) {
-                    case IDC_MAIN_BUTTON_1: {
-                        GetWindowText(hEdit, userInput, sizeof(userInput));
-                        double buffMag, buffAngle;
-                        int len_temp = strlen(userInput);
-                        solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
-                        snprintf(solution, sizeof(solution), "RESULT: Polar Form %.3f /_ %.3f    Complex Form %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle), buffMag*sin(buffAngle));
-                        InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
-                        break;
+                case IDC_MAIN_BUTTON_1: {
+                    GetWindowText(hEdit, userInput, sizeof(userInput));
+                    showsteps = 1;
+                    int len_temp = strlen(userInput);
+                    double buffMag, buffAngle;
+                    solveComplexEq(userInput, len_temp, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
+                    snprintf(solution, sizeof(solution), "RESULT: Polar Form: %.3f/_%.3f    Complex Form: %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle*(PI/180)), buffMag*sin(buffAngle*(PI/180)));
+                    strcpy(prevResult[resultCounter++], solution);
+                    for(int i = 1; i < showsteps; i++){
+                                snprintf(showWorkBuffer[i], sizeof(showWorkBuffer), showWork[i]);
+                            }
+                            showstepsBuffer = showsteps;
+                    userInput[0] = '\0';
+                    InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
+                    UpdateWindow(hWnd);
+                break;
                 }
                 case IDC_MAIN_BUTTON_2:
                     char prev[256] = "Previous ";
                     strcat(prev, prevResult[resultCounter-2]);
                     MessageBox(hWnd, prev, "Message", MB_OK);
-                    break;
+                break;
 
                 case IDC_STATIC_OUTPUT:
                     char buffer[256];
                     if(HIWORD(wParam) == EN_UPDATE){
                         GetWindowText(hEdit, buffer, sizeof(buffer));
                         int len_buffer = strlen(buffer);
-                        if(buffer[len_buffer-1] == '='){
+                        if(buffer[len_buffer-1] == '=' && (strcmp(buffer, prevbuffer) != 0)){
+                            steps = 0, showsteps = 1;
+                            strncpy(prevbuffer, buffer, sizeof(prevbuffer));
                             buffer[len_buffer-1] = '\0';
                             double buffMag, buffAngle;
                             solveComplexEq(buffer, len_buffer, &buffMag, &buffAngle, &bP, &steps, solution, showWork, &showsteps);
                             snprintf(solution, sizeof(solution), "RESULT: Polar Form: %.3f/_%.3f    Complex Form: %.3f + j%.3f", buffMag, buffAngle, buffMag*cos(buffAngle*(PI/180)), buffMag*sin(buffAngle*(PI/180)));
+                            strcpy(prevResult[resultCounter++], solution);
+                            for(int i = 1; i < showsteps; i++){
+                                snprintf(showWorkBuffer[i], sizeof(showWorkBuffer), showWork[i]);
+                            }
+                            showstepsBuffer = showsteps;
                             buffer[0] = '\0';
                             InvalidateRect(hWnd, NULL, TRUE);  // Triggers WM_PAINT
+                            UpdateWindow(hWnd);
+                        }
+                        if(len_buffer > 1){
+                            notTyping = 0;
+                            InvalidateRect(hWnd, NULL, TRUE);
+                            UpdateWindow(hWnd);
+                        } else {
+                            notTyping = 1;
+                            InvalidateRect(hWnd, NULL, TRUE);
+                            UpdateWindow(hWnd);
                         }
                     }
-                    break;
+                break;
             }
             break;
+        break;
             
 
         case WM_CLOSE:
@@ -207,31 +237,61 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
         case WM_PAINT: {
         PAINTSTRUCT ps;
+        XFORM xForm;
         HDC hdc = BeginPaint(hWnd, &ps);
 
         RECT clientRect;
         GetClientRect(hWnd, &clientRect); // Get client area dimensions
         int swidth = clientRect.right - clientRect.left;
         int sheight = clientRect.bottom - clientRect.top;
+        //to allow for use of SetWorldTransform();
+        SetGraphicsMode(hdc, GM_ADVANCED);
+
+        //char array[sizeOfArray][sizeOfSingleEntry] 
         
-        
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(0,0,0));
+
+        if(notTyping){
+            // scale and transform text //
+            xForm.eM11 = 1.5f; // horizontal scaling
+            xForm.eM22 = 1.5f; // vertical scaling
+            xForm.eM12 = 0.0f; // shear 
+            xForm.eM21 = 0.0f; // shear
+            xForm.eDx = 0.0f;  // horizontal translation
+            xForm.eDy = 0.0f;  // vertical translation
+
+            SetWorldTransform(hdc, &xForm);
+
+            char info[12][128];
+            snprintf(info[0], 128, "Enter equation with the following format:");
+            snprintf(info[1], 128, "Polar: p[magnitude, angle(deg)]");
+            snprintf(info[2], 128, "Imag: i[real, imag]");
+            snprintf(info[3], 128, "Press Calculate, or type =");
+            snprintf(info[4], 128, "Example: (p[10, 45] + i[4, 60]) * i[5, 30] =");
+            // text layout param //
+            int xPad = 20, yPad = 20, yInc = 30;
+
+            TextOut(hdc, xPad, yPad, info[0], strlen(info[0]));
+            TextOut(hdc, xPad*2, yInc*1+yPad, info[1], strlen(info[1]));
+            TextOut(hdc, xPad*2, yInc*2+yPad, info[2], strlen(info[2]));
+            TextOut(hdc, xPad, yInc*3+yPad, info[3], strlen(info[3]));
+            TextOut(hdc, xPad*3, yInc*4+yPad, info[4], strlen(info[4]));
+        }
+
+        // these run continously (every frame)
         // Draw the text if not empty
-        if (strlen(solution) > 0) {
-            SetBkMode(hdc, TRANSPARENT);
-            SetTextColor(hdc, RGB(0,0,0));
-            for(int i = 1; i < showsteps; i++){
+        if (strlen(solution) > 1) {
+            for(int i = 1; i < showstepsBuffer; i++){
                 if(i % 2 != 0){
-                TextOut(hdc, 30, 20*i, showWork[i], strlen(showWork[i]));
+                TextOut(hdc, 30, 20*i, showWorkBuffer[i], strlen(showWorkBuffer[i]));
                 } else {
-                    TextOut(hdc, 60, 20*i, showWork[i], strlen(showWork[i]));    
+                    TextOut(hdc, 60, 20*i, showWorkBuffer[i], strlen(showWorkBuffer[i]));    
                 }
             }
             TextOut(hdc, swidth/4 - swidth/8, sheight-125, solution, strlen(solution));
-            strcpy(prevResult[resultCounter++], solution);
-            showsteps = 1;
-            for(int i = 0; i < sizeof(showWork)/sizeof(showWork[0]); i++){
-                showWork[i][0] = '\0';
-            }
+            
+            // Sleep(60);
         }
         // debug //
         // char debug[512];
