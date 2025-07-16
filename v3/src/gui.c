@@ -19,6 +19,7 @@ int GetWindowWidth(HWND hWnd) {
 }
 
 HWND PushButton_Handle1, PushButton_Handle2, hEdit;
+HFONT hFont = NULL;
 int screenH, screenW;
 
 ATOM Init_Window_Class(HINSTANCE);
@@ -226,7 +227,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             break;
         break;
             
-
+        //place directly before wm_paint
         case WM_CLOSE:
             DestroyWindow(hWnd);
             break;
@@ -239,15 +240,26 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         PAINTSTRUCT ps;
         XFORM xForm;
         HDC hdc = BeginPaint(hWnd, &ps);
-
         RECT clientRect;
+
         GetClientRect(hWnd, &clientRect); // Get client area dimensions
         int swidth = clientRect.right - clientRect.left;
         int sheight = clientRect.bottom - clientRect.top;
         //to allow for use of SetWorldTransform();
         SetGraphicsMode(hdc, GM_ADVANCED);
+        
+        //custom font
+        LOGFONT lf = {0};
+        lf.lfHeight = sheight/30+(1-swidth/1000);  // <-- set font size here (positive = logical units, negative = point size)
+        strcpy(lf.lfFaceName, "Consolas");
+        hFont = CreateFontIndirect(&lf);
 
-        //char array[sizeOfArray][sizeOfSingleEntry] 
+        //font for text drawn
+        HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+        //HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        SelectObject(hdc, hFont);
+        //rectangle for text 
+        RECT textRect = { 20, 20, swidth-50, 1000 }; // Left, Top, Right, Bottom (initial large bottom)
         
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(0,0,0));
@@ -260,7 +272,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             xForm.eM21 = 0.0f; // shear
             xForm.eDx = 0.0f;  // horizontal translation
             xForm.eDy = 0.0f;  // vertical translation
-
+            
             SetWorldTransform(hdc, &xForm);
 
             char info[12][128];
@@ -281,15 +293,29 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
         // these run continously (every frame)
         // Draw the text if not empty
+        int y;
         if (strlen(solution) > 1) {
             for(int i = 1; i < showstepsBuffer; i++){
+                //must set rec each time before drawing text after measuring height 
+                textRect.top = y;
+                textRect.bottom = y + 1000;
+                textRect.left = 20;
+                textRect.right = swidth - 50;
                 if(i % 2 != 0){
-                TextOut(hdc, 30, 20*i, showWorkBuffer[i], strlen(showWorkBuffer[i]));
+                    // Now you can draw with the exact rectangle
+                    DrawText(hdc, showWorkBuffer[i], -1, &textRect, DT_WORDBREAK);
+                    //TextOut(hdc, 30, 20*i, showWorkBuffer[i], strlen(showWorkBuffer[i]));
                 } else {
-                    TextOut(hdc, 60, 20*i, showWorkBuffer[i], strlen(showWorkBuffer[i]));    
+                    textRect.left += 30;
+                    DrawText(hdc, showWorkBuffer[i], -1, &textRect, DT_WORDBREAK);
+                    //TextOut(hdc, 60, 20*i, showWorkBuffer[i], strlen(showWorkBuffer[i]));    
                 }
+                // Measure height of this line
+                DrawText(hdc, showWorkBuffer[i], -1, &textRect, DT_WORDBREAK | DT_CALCRECT);
+                y = textRect.bottom;
             }
             TextOut(hdc, swidth/4 - swidth/8, sheight-125, solution, strlen(solution));
+            ReleaseDC(hWnd, hdc);
             
             // Sleep(60);
         }

@@ -396,7 +396,7 @@ void multPolarImag(double mag[], double angle[], double real[], double imag[], i
             tempAngle = (180/PI)*(atan2(imag[1],real[1]));
             *fmag = mag[0]*sqrt(pow(real[1],2)+pow(imag[1],2));
             *fangle = angle[0] + tempAngle;
-            tempAngle0 = angle[0];   
+            tempAngle0 = angle[0];
         }
         else if(lt == -1){
             tempAngle = (180/PI)*(atan2(imag[0],real[0]));
