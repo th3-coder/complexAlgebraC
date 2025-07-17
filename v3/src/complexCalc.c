@@ -19,7 +19,7 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
     //scan for parenthesis call solve function using inside parenthesis only using output to finish [update]
     char temp[256];
     for(int i = 0; i < eq_len; i++){
-        if(equation[i] == '(' && startPos == -1){
+        if(equation[i] == '(' && equation[i+1] != '(' && startPos == -1){
             startPos = i+1;
         }
         else if(equation[i] == ')'){
@@ -34,6 +34,10 @@ void solveComplexEq(char *equation, int eq_len, double *buffMag, double *buffAng
         *bP = 1;
         temp[(endPos-startPos)+1] = '\0';
         op = '\0';
+        snprintf(showWork[*showsteps], sizeof(showWork[*showsteps]), "Solve inside parenthesis:");
+        (*showsteps)++;
+        snprintf(showWork[*showsteps], sizeof(showWork[*showsteps]), "(%s)", temp);
+        (*showsteps)++;
         //printf("Inside parenth: %s\n", temp);
         solveComplexEq(temp, strlen(temp), buffMag, buffAngle, bP, steps, solution, showWork, showsteps);
         sprintf(result, "p[%.3f,%.3f]", *buffMag, *buffAngle);

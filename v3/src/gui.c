@@ -6,26 +6,20 @@
 #define APPTITLE "Complex/Polar Calculator"
 #define IDC_MAIN_BUTTON_1 9001
 #define IDC_MAIN_BUTTON_2 9002
-#define IDC_STATIC_OUTPUT 9003
-
-int GetWindowWidth(HWND hWnd);
-
-int GetWindowWidth(HWND hWnd) {
-    RECT rect;
-    if (GetWindowRect(hWnd, &rect)) {
-        return rect.right - rect.left;
-    }
-    return 0; // Return 0 or handle error appropriately if GetWindowRect fails
-}
+#define IDC_INPUT_1 9003
+#define IDC_DYNAMIC_OUTPUT_1 9004
 
 HWND PushButton_Handle1, PushButton_Handle2, hEdit;
 HFONT hFont = NULL;
-int screenH, screenW;
 
 ATOM Init_Window_Class(HINSTANCE);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WinProc(HWND, UINT, WPARAM, LPARAM);
 
+
+// typedef struct{
+//     char prevResult[128]
+// } Buffer;
 //data variables
 char prevResult[128][256];
 char showWork[128][256];
@@ -35,7 +29,6 @@ char prevbuffer[256];
 int resultCounter = 0, steps = 0, showsteps = 1, showstepsBuffer;
 //booleans
 int notTyping = 1;
-
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR nCmdLine, int nCmdShow) {
     
@@ -101,7 +94,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 0, "EDIT", "",
                 WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
                 0, 0, 0, 0,
-                hWnd, (HMENU)IDC_STATIC_OUTPUT, GetModuleHandle(NULL), NULL);
+                hWnd, (HMENU)IDC_INPUT_1, GetModuleHandle(NULL), NULL);
 
             // Create buttons
             PushButton_Handle1 = CreateWindow(
@@ -120,20 +113,25 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         }
 
         case WM_SIZE: {
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            int swidth = clientRect.right - clientRect.left;
+            int sheight = clientRect.top -clientRect.bottom;
+
             int width = LOWORD(lParam);
             int height = HIWORD(lParam);
-            screenW = width;
-            screenH = height;
+            int screenW = width;
+            int screenH = height;
             // Control dimensions and spacing
-            int buttonWidth = 120;
+            int buttonWidth = swidth/6;
             int buttonHeight = 40;
             int spacing = 10;
-            int editWidth = 300;
+            int editWidth = swidth/2;
             int editHeight = 25;
 
             // Position edit control in center bottom
             MoveWindow(hEdit,
-                (width - editWidth) / 2,
+                (width - editWidth) / 3,
                 height - editHeight - buttonHeight - spacing * 3,
                 editWidth, editHeight, TRUE);
 
@@ -191,7 +189,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                     MessageBox(hWnd, prev, "Message", MB_OK);
                 break;
 
-                case IDC_STATIC_OUTPUT:
+                case IDC_INPUT_1:
                     char buffer[256];
                     if(HIWORD(wParam) == EN_UPDATE){
                         GetWindowText(hEdit, buffer, sizeof(buffer));
@@ -250,7 +248,14 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         
         //custom font
         LOGFONT lf = {0};
-        lf.lfHeight = sheight/30+(1-swidth/1000);  // <-- set font size here (positive = logical units, negative = point size)
+        
+        if(sheight > 600)
+            lf.lfHeight = sheight/36;
+        else if (swidth < 540)
+            lf.lfHeight = swidth/30;    
+        else 
+            lf.lfHeight = sheight/24; 
+        //lf.lfHeight = abs(sheight-swidth)/21;
         strcpy(lf.lfFaceName, "Consolas");
         hFont = CreateFontIndirect(&lf);
 
@@ -265,16 +270,14 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         SetTextColor(hdc, RGB(0,0,0));
 
         if(notTyping){
-            // scale and transform text //
-            xForm.eM11 = 1.5f; // horizontal scaling
-            xForm.eM22 = 1.5f; // vertical scaling
-            xForm.eM12 = 0.0f; // shear 
-            xForm.eM21 = 0.0f; // shear
-            xForm.eDx = 0.0f;  // horizontal translation
-            xForm.eDy = 0.0f;  // vertical translation
+            // // scale and transform text //
+            // xForm.eM11 = 1.5f; // horizontal scaling
+            // xForm.eM22 = 1.5f; // vertical scaling
+            // xForm.eM12 = 0.0f; // shear 
+            // xForm.eM21 = 0.0f; // shear
+            // xForm.eDx = 0.0f;  // horizontal translation
+            // xForm.eDy = 0.0f;  // vertical translation
             
-            SetWorldTransform(hdc, &xForm);
-
             char info[12][128];
             snprintf(info[0], 128, "Enter equation with the following format:");
             snprintf(info[1], 128, "Polar: p[magnitude, angle(deg)]");
@@ -291,14 +294,14 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             TextOut(hdc, xPad*3, yInc*4+yPad, info[4], strlen(info[4]));
         }
 
-        // these run continously (every frame)
+        // these run when WM_PAINT is called explicity or when window is resized , moved or covered
         // Draw the text if not empty
         int y;
         if (strlen(solution) > 1) {
             for(int i = 1; i < showstepsBuffer; i++){
                 //must set rec each time before drawing text after measuring height 
                 textRect.top = y;
-                textRect.bottom = y + 1000;
+                textRect.bottom = sheight -100;
                 textRect.left = 20;
                 textRect.right = swidth - 50;
                 if(i % 2 != 0){
@@ -314,10 +317,16 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 DrawText(hdc, showWorkBuffer[i], -1, &textRect, DT_WORDBREAK | DT_CALCRECT);
                 y = textRect.bottom;
             }
-            TextOut(hdc, swidth/4 - swidth/8, sheight-125, solution, strlen(solution));
-            ReleaseDC(hWnd, hdc);
-            
-            // Sleep(60);
+            // lf.lfHeight = sheight/36;
+            // lf.lfWidth = swidth/30;
+            textRect.top = sheight - 60;
+            textRect.bottom = sheight-15;
+            textRect.left = 20;
+            textRect.right = swidth - swidth/4;
+            SetBkMode(hdc, OPAQUE);
+            DrawText(hdc, solution, -1, &textRect, DT_WORDBREAK); 
+            //TextOut(hdc, 30, sheight-60, solution, strlen(solution));
+            ReleaseDC(hWnd, hdc);    
         }
         // debug //
         // char debug[512];
