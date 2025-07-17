@@ -113,25 +113,20 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         }
 
         case WM_SIZE: {
-            RECT clientRect;
-            GetClientRect(hWnd, &clientRect);
-            int swidth = clientRect.right - clientRect.left;
-            int sheight = clientRect.top -clientRect.bottom;
-
             int width = LOWORD(lParam);
             int height = HIWORD(lParam);
             int screenW = width;
             int screenH = height;
             // Control dimensions and spacing
-            int buttonWidth = swidth/6;
+            int buttonWidth = 120;
             int buttonHeight = 40;
             int spacing = 10;
-            int editWidth = swidth/2;
+            int editWidth = 300;
             int editHeight = 25;
 
             // Position edit control in center bottom
             MoveWindow(hEdit,
-                (width - editWidth) / 3,
+                (width - editWidth) / 2,
                 height - editHeight - buttonHeight - spacing * 3,
                 editWidth, editHeight, TRUE);
 
@@ -248,14 +243,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         
         //custom font
         LOGFONT lf = {0};
-        
-        if(sheight > 600)
-            lf.lfHeight = sheight/36;
-        else if (swidth < 540)
-            lf.lfHeight = swidth/30;    
-        else 
-            lf.lfHeight = sheight/24; 
-        //lf.lfHeight = abs(sheight-swidth)/21;
+        lf.lfHeight = sheight/30+(1-swidth/1000); 
         strcpy(lf.lfFaceName, "Consolas");
         hFont = CreateFontIndirect(&lf);
 
@@ -270,40 +258,40 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         SetTextColor(hdc, RGB(0,0,0));
 
         if(notTyping){
-            // // scale and transform text //
-            // xForm.eM11 = 1.5f; // horizontal scaling
-            // xForm.eM22 = 1.5f; // vertical scaling
-            // xForm.eM12 = 0.0f; // shear 
-            // xForm.eM21 = 0.0f; // shear
-            // xForm.eDx = 0.0f;  // horizontal translation
-            // xForm.eDy = 0.0f;  // vertical translation
+            // scale and transform text //
+            xForm.eM11 = 1.5f; // horizontal scaling
+            xForm.eM22 = 1.5f; // vertical scaling
+            xForm.eM12 = 0.0f; // shear 
+            xForm.eM21 = 0.0f; // shear
+            xForm.eDx = 0.0f;  // horizontal translation
+            xForm.eDy = 0.0f;  // vertical translation
             
+            SetWorldTransform(hdc, &xForm);
+
             char info[12][128];
             snprintf(info[0], 128, "Enter equation with the following format:");
             snprintf(info[1], 128, "Polar: p[magnitude, angle(deg)]");
             snprintf(info[2], 128, "Imag: i[real, imag]");
             snprintf(info[3], 128, "Press Calculate, or type =");
             snprintf(info[4], 128, "Example: (p[10, 45] + i[4, 60]) * i[5, 30] =");
-            snprintf(info[5], 128, "Tutorial");
-            
             // text layout param //
             int xPad = 20, yPad = 20, yInc = 30;
-            TextOut(hdc, swidth/3, yPad, info[5], strlen(info[5]));
-            TextOut(hdc, xPad, yInc*1+yPad, info[0], strlen(info[0]));
-            TextOut(hdc, xPad*2, yInc*2+yPad, info[1], strlen(info[1]));
-            TextOut(hdc, xPad*2, yInc*3+yPad, info[2], strlen(info[2]));
-            TextOut(hdc, xPad, yInc*4+yPad, info[3], strlen(info[3]));
-            TextOut(hdc, xPad*3, yInc*5+yPad, info[4], strlen(info[4]));
+
+            TextOut(hdc, xPad, yPad, info[0], strlen(info[0]));
+            TextOut(hdc, xPad*2, yInc*1+yPad, info[1], strlen(info[1]));
+            TextOut(hdc, xPad*2, yInc*2+yPad, info[2], strlen(info[2]));
+            TextOut(hdc, xPad, yInc*3+yPad, info[3], strlen(info[3]));
+            TextOut(hdc, xPad*3, yInc*4+yPad, info[4], strlen(info[4]));
         }
 
-        // these run when WM_PAINT is called explicity or when window is resized , moved or covered
+        // these run continously (every frame)
         // Draw the text if not empty
         int y;
         if (strlen(solution) > 1) {
             for(int i = 1; i < showstepsBuffer; i++){
                 //must set rec each time before drawing text after measuring height 
                 textRect.top = y;
-                textRect.bottom = sheight -100;
+                textRect.bottom = y + 1000;
                 textRect.left = 20;
                 textRect.right = swidth - 50;
                 if(i % 2 != 0){
@@ -319,16 +307,10 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 DrawText(hdc, showWorkBuffer[i], -1, &textRect, DT_WORDBREAK | DT_CALCRECT);
                 y = textRect.bottom;
             }
-            // lf.lfHeight = sheight/36;
-            // lf.lfWidth = swidth/30;
-            textRect.top = sheight - 60;
-            textRect.bottom = sheight-15;
-            textRect.left = 20;
-            textRect.right = swidth - swidth/4;
-            SetBkMode(hdc, OPAQUE);
-            DrawText(hdc, solution, -1, &textRect, DT_WORDBREAK); 
-            //TextOut(hdc, 30, sheight-60, solution, strlen(solution));
-            ReleaseDC(hWnd, hdc);    
+            TextOut(hdc, swidth/4 - swidth/8, sheight-125, solution, strlen(solution));
+            ReleaseDC(hWnd, hdc);
+            
+            // Sleep(60);
         }
         // debug //
         // char debug[512];
