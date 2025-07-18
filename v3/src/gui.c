@@ -62,7 +62,7 @@ ATOM Init_Window_Class(HINSTANCE hInstance) {
     wc.hInstance = hInstance;
     wc.hIcon = LoadIcon(NULL, IDI_ASTERISK);
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
+    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszMenuName = NULL;
     wc.lpszClassName = APPTITLE;
     wc.hIconSm = NULL;
@@ -267,7 +267,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
         RECT textRect = { 20, 20, swidth-50, 1000 }; // Left, Top, Right, Bottom (initial large bottom)
         
         SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(0,0,0));
+        SetTextColor(hdc, RGB(255,255,255));
 
         if(notTyping){
             // // scale and transform text //
@@ -288,16 +288,38 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             
             // text layout param //
             int xPad = 20, yPad = 20, yInc = 30;
-            TextOut(hdc, swidth/3, yPad, info[5], strlen(info[5]));
+            TextOut(hdc, swidth/6, yPad, info[5], strlen(info[5]));
             TextOut(hdc, xPad, yInc*1+yPad, info[0], strlen(info[0]));
             TextOut(hdc, xPad*2, yInc*2+yPad, info[1], strlen(info[1]));
             TextOut(hdc, xPad*2, yInc*3+yPad, info[2], strlen(info[2]));
             TextOut(hdc, xPad, yInc*4+yPad, info[3], strlen(info[3]));
-            TextOut(hdc, xPad*3, yInc*5+yPad, info[4], strlen(info[4]));
+            TextOut(hdc, xPad, yInc*6+yPad, info[4], strlen(info[4]));
         }
-
+        int steps = 1000;
+        int j = steps;
         // these run when WM_PAINT is called explicity or when window is resized , moved or covered
         // Draw the text if not empty
+        for(int i = 0; i < steps; i++){
+            int width = clientRect.right - clientRect.left;
+            int height = clientRect.bottom - clientRect.top; 
+            int x = rand()% clientRect.right;
+            int y = rand() % clientRect.bottom;
+            int linex = (int)(i*width/steps);  
+            int liney = (int)(i*height/steps);
+            
+            SetPixel(hdc, x, y, RGB(255, 0, 0));
+            // SetPixel(hdc, linex, liney, RGB(255, 255, 255));
+            // //linex = (int)(j*width/steps);  
+            // liney = (int)(i*height/steps);
+            j--;
+            //SetPixel(hdc, linex, liney, RGB(255, 255, 255));
+            double pi = 2*3.1459269535*((double)i/steps);
+            int circlex = (int)(width/3*cos(pi) + width/2);
+            int circley = (int)(height/3*sin(pi) + height/2);
+            SetPixel(hdc, circlex, circley, RGB(255,255,255));
+            //SetPixel(hdc, linex, liney, RGB(0, 0,255));
+            //Sleep(1);    
+        }
         int y;
         if (strlen(solution) > 1) {
             for(int i = 1; i < showstepsBuffer; i++){
@@ -325,7 +347,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             textRect.bottom = sheight-15;
             textRect.left = 20;
             textRect.right = swidth - swidth/4;
-            SetBkMode(hdc, OPAQUE);
+            //SetBkMode(hdc, OPAQUE);
             DrawText(hdc, solution, -1, &textRect, DT_WORDBREAK); 
             //TextOut(hdc, 30, sheight-60, solution, strlen(solution));
             ReleaseDC(hWnd, hdc);    
