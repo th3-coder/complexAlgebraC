@@ -16,7 +16,7 @@
 * gcc F_complexCalc.c complexCalc.c -o "complexCalc.exe"
 
 <img width="795" height="616" alt="image" src="https://github.com/user-attachments/assets/b3c09b0a-16a4-4278-871d-8d285029c7a4" />
-<img width="794" height="618" alt="image" src="https://github.com/user-attachments/assets/20bfdd45-41e2-4b23-b1b6-f378d9365079" />
+<img width="793" height="613" alt="image" src="https://github.com/user-attachments/assets/a4e6041b-7e55-49a5-9699-205ff3654393" />
 
 
 
