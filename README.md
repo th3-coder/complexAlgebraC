@@ -15,6 +15,7 @@
 ***Compile on Windows***
 * gcc F_complexCalc.c complexCalc.c -o "complexCalc.exe"
 
+<img width="795" height="616" alt="image" src="https://github.com/user-attachments/assets/b3c09b0a-16a4-4278-871d-8d285029c7a4" />
 
 
 
